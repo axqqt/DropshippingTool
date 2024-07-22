@@ -10,12 +10,12 @@ def get_product_data(url):
     soup = BeautifulSoup(response.text, 'html.parser')
 
     products = []
-    # Adjust the selector based on the page structure
-    for item in soup.select('.item'):
+    # Update selectors based on the actual HTML structure
+    for item in soup.select('.list-item'):
         try:
-            title = item.select_one('.item-title').text.strip()
-            price = item.select_one('.item-price').text.strip()
-            link = item.select_one('a')['href']
+            title = item.select_one('.product-title').text.strip()
+            price = item.select_one('.product-price').text.strip()
+            link = 'https:' + item.select_one('.product-title a')['href']
             image_url = item.select_one('img')['src']
             products.append({
                 'title': title,
@@ -23,7 +23,8 @@ def get_product_data(url):
                 'link': link,
                 'image_url': image_url
             })
-        except AttributeError:
+        except AttributeError as e:
+            print(f"Error: {e}")
             continue
 
     return products
