@@ -14,10 +14,13 @@ import threading
 shop_url = "your-store.myshopify.com"
 api_version = '2023-04'
 private_app_password = 'your_private_app_password'
-shop = shopify.Shop.current()
 
-session = shopify.Session(shop_url, api_version, private_app_password)
-shopify.ShopifyResource.activate_session(session)
+shopify.ShopifyResource.set_site(f"https://{shop_url}/admin/api/{api_version}")
+shopify.ShopifyResource.set_user("private_app_api_key")
+shopify.ShopifyResource.set_password(private_app_password)
+
+# Now you can get the shop
+shop = shopify.Shop.current()
 
 def get_product_data(url):
     headers = {
