@@ -3,17 +3,14 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-import numpy as np
 import shopify
 import schedule
 import threading
 
 # Shopify setup
-shop_url = "your-store.myshopify.com"
+shop_url = "https://f56fbe-0f.myshopify.com/"
 api_version = '2023-04'
-private_app_password = 'your_private_app_password'
+private_app_password = 'wegottaenabletrial248'
 
 shopify.ShopifyResource.set_site(f"https://{shop_url}/admin/api/{api_version}")
 shopify.ShopifyResource.set_user("private_app_api_key")
@@ -50,32 +47,18 @@ def get_product_data(url):
 
     return products
 
-def classify_products(products):
-    categories = ["beauty", "skincare", "fashion", "wellness", "self-care"]
-    
-    X_train = [
-        "facial cream moisturizer anti-aging wrinkle",
-        "lipstick makeup cosmetics foundation concealer",
-        "dress skirt blouse fashion trendy stylish",
-        "yoga mat meditation mindfulness stress-relief",
-        "bath soap relaxation aromatherapy self-care",
-    ]
-    y_train = categories
-
-    vectorizer = TfidfVectorizer()
-    classifier = MultinomialNB()
-
-    X_train_vectorized = vectorizer.fit_transform(X_train)
-    classifier.fit(X_train_vectorized, y_train)
+def classify_products_with_llama(products):
+    # Assuming we have a function to interact with the LLaMA model
+    def get_llama_classification(title, description):
+        # Placeholder for LLaMA model interaction
+        # Replace this with actual API calls to the LLaMA model
+        return "category"
 
     relevant_products = []
     for product in products:
-        text = product['title'] + ' ' + product['description']
-        X_test_vectorized = vectorizer.transform([text])
-        probabilities = classifier.predict_proba(X_test_vectorized)[0]
-        
-        if np.max(probabilities) > 0.3:
-            product['category'] = categories[np.argmax(probabilities)]
+        category = get_llama_classification(product['title'], product['description'])
+        if category:
+            product['category'] = category
             relevant_products.append(product)
     
     return relevant_products
@@ -139,7 +122,7 @@ num_pages = 5  # Adjust as needed
 all_products = scrape_multiple_pages(base_url, num_pages)
 print(f"Total products scraped: {len(all_products)}")
 
-relevant_products = classify_products(all_products)
+relevant_products = classify_products_with_llama(all_products)
 print(f"Relevant products found: {len(relevant_products)}")
 
 # Convert to DataFrame and save to CSV
