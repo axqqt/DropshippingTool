@@ -1,0 +1,11 @@
+Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Variant SKU,Variant Price,Variant Inventory Qty,Image Src
+product-2176,Sample Product 54,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-6709,30.22,50,https://example.com/image10.jpg
+product-4445,Sample Product 8,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-2168,10.60,9,https://example.com/image10.jpg
+product-3811,Sample Product 95,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-3965,44.26,96,https://example.com/image1.jpg
+product-5649,Sample Product 74,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-6465,72.26,88,https://example.com/image10.jpg
+product-2042,Sample Product 72,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-1882,77.96,16,https://example.com/image3.jpg
+product-3532,Sample Product 48,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-3765,19.67,83,https://example.com/image7.jpg
+product-2997,Sample Product 71,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-3181,60.37,43,https://example.com/image5.jpg
+product-9013,Sample Product 27,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-3799,80.91,26,https://example.com/image2.jpg
+product-1017,Sample Product 50,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-6422,54.59,14,https://example.com/image5.jpg
+product-4058,Sample Product 95,<p>This is a sample product description.</p>,AliExpress,Sample Category,Sample Type,"sample, product, aliexpress",TRUE,SKU-9492,44.30,13,https://example.com/image4.jpg
