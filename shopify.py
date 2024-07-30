@@ -70,7 +70,7 @@ def generate_product(prompt):
 def create_shopify_csv(prompt, num_products):
     products = [generate_product(prompt) for _ in range(num_products)]
     
-    filename = f"shopify_products_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    filename = f"{prompt} products on {datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     
     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = products[0].keys()
