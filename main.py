@@ -3,13 +3,9 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
-import shopify
-import schedule
-import threading
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
-
-history = [];
+import urllib.parse
 
 # LangChain setup
 template = """
@@ -22,26 +18,9 @@ Question : {question}
 Answer:
 """
 
-model = OllamaLLM(model="llama2")  # Changed to llama2 as llama3 doesn't exist
+model = OllamaLLM(model="llama2")
 prompt = ChatPromptTemplate.from_template(template)
 chain = prompt | model
-
-# Shopify setup
-shop_url = "your-store.myshopify.com"  # Replace with your actual shop URL
-api_version = '2023-04'
-private_app_password = 'your_private_app_password'  # Replace with your actual password
-
-shopify.ShopifyResource.set_site(f"https://{shop_url}/admin/api/{api_version}")
-shopify.ShopifyResource.set_user("your_api_key")  # Replace with your actual API key
-shopify.ShopifyResource.set_password(private_app_password)
-
-# Verify Shopify connection
-try:
-    shop = shopify.Shop.current()
-    print(f"Connected to Shopify store: {shop.name}")
-except Exception as e:
-    print(f"Failed to connect to Shopify: {e}")
-    exit(1)
 
 def get_product_data(url):
     headers = {
@@ -89,69 +68,80 @@ def classify_products_with_llama(products):
 def scrape_multiple_pages(base_url, num_pages):
     all_products = []
     for i in range(1, num_pages + 1):
-        url = f"{base_url}?page={i}"
+        url = f"{base_url}&page={i}"
         print(f"Scraping page {i}...")
         products = get_product_data(url)
         all_products.extend(products)
         time.sleep(random.uniform(1, 3))
     return all_products
 
-def update_stock(product, stock):
-    try:
-        shopify_product = shopify.Product.find(product['shopify_id'])
-        variant = shopify_product.variants[0]
-        variant.inventory_quantity = stock
-        variant.save()
-        print(f"Updated stock for product {product['title']} to {stock}")
-    except Exception as e:
-        print(f"Failed to update stock for product {product['title']}: {e}")
-
-def check_and_update_stock():
-    df = pd.read_csv('aliexpress_women_products.csv')
-    for index, row in df.iterrows():
-        aliexpress_url = row['link']
-        try:
-            response = requests.get(aliexpress_url)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            
-            stock_element = soup.select_one('.product-quantity-tip')
-            if stock_element:
-                stock = int(stock_element.text.strip().split()[0])
-                df.at[index, 'stock'] = stock
-                update_stock(row, stock)
-            
-            if stock == 0:
-                substitute = find_substitute(row['title'])
-                if substitute:
-                    df.at[index, 'substitute'] = substitute['link']
-        except Exception as e:
-            print(f"Error checking stock for {row['title']}: {e}")
+def prepare_shopify_csv(df):
+    shopify_df = pd.DataFrame()
     
-    df.to_csv('aliexpress_women_products.csv', index=False)
-
-def find_substitute(product_title):
-    search_url = f"https://www.aliexpress.com/wholesale?SearchText={product_title.replace(' ', '+')}"
-    try:
-        response = requests.get(search_url)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        first_result = soup.select_one('.product-item')
-        if first_result:
-            link = first_result.select_one('a')['href']
-            return {'link': link}
-    except Exception as e:
-        print(f"Error finding substitute for {product_title}: {e}")
-    return None
-
-def run_stock_check():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    shopify_df['Handle'] = df['title'].apply(lambda x: x.lower().replace(' ', '-'))
+    shopify_df['Title'] = df['title']
+    shopify_df['Body (HTML)'] = df['description']
+    shopify_df['Vendor'] = 'AliExpress'
+    shopify_df['Product Category'] = df['category']
+    shopify_df['Type'] = df['category']
+    shopify_df['Tags'] = df['category']
+    shopify_df['Published'] = 'TRUE'
+    shopify_df['Option1 Name'] = 'Title'
+    shopify_df['Option1 Value'] = 'Default Title'
+    shopify_df['Option2 Name'] = ''
+    shopify_df['Option2 Value'] = ''
+    shopify_df['Option3 Name'] = ''
+    shopify_df['Option3 Value'] = ''
+    shopify_df['Variant SKU'] = df.index.map(lambda x: f'ALI-{x}')
+    shopify_df['Variant Grams'] = '0'
+    shopify_df['Variant Inventory Tracker'] = 'shopify'
+    shopify_df['Variant Inventory Qty'] = '1'
+    shopify_df['Variant Inventory Policy'] = 'deny'
+    shopify_df['Variant Fulfillment Service'] = 'manual'
+    shopify_df['Variant Price'] = df['price']
+    shopify_df['Variant Compare At Price'] = ''
+    shopify_df['Variant Requires Shipping'] = 'TRUE'
+    shopify_df['Variant Taxable'] = 'TRUE'
+    shopify_df['Variant Barcode'] = ''
+    shopify_df['Image Src'] = df['image_url']
+    shopify_df['Image Position'] = '1'
+    shopify_df['Image Alt Text'] = df['title']
+    shopify_df['Gift Card'] = 'FALSE'
+    shopify_df['SEO Title'] = df['title']
+    shopify_df['SEO Description'] = df['description'].apply(lambda x: x[:160] + '...' if len(x) > 160 else x)
+    shopify_df['Google Shopping / Google Product Category'] = ''
+    shopify_df['Google Shopping / Gender'] = ''
+    shopify_df['Google Shopping / Age Group'] = ''
+    shopify_df['Google Shopping / MPN'] = ''
+    shopify_df['Google Shopping / AdWords Grouping'] = ''
+    shopify_df['Google Shopping / AdWords Labels'] = ''
+    shopify_df['Google Shopping / Condition'] = ''
+    shopify_df['Google Shopping / Custom Product'] = ''
+    shopify_df['Google Shopping / Custom Label 0'] = ''
+    shopify_df['Google Shopping / Custom Label 1'] = ''
+    shopify_df['Google Shopping / Custom Label 2'] = ''
+    shopify_df['Google Shopping / Custom Label 3'] = ''
+    shopify_df['Google Shopping / Custom Label 4'] = ''
+    shopify_df['Variant Image'] = ''
+    shopify_df['Variant Weight Unit'] = 'kg'
+    shopify_df['Variant Tax Code'] = ''
+    shopify_df['Cost per item'] = ''
+    shopify_df['Status'] = 'active'
+    
+    return shopify_df
 
 # Main execution
 if __name__ == "__main__":
-    base_url = 'https://www.aliexpress.com/category/200003482/women-clothing.html'
-    num_pages = 5  # Adjust as needed
+    # Get user input for product category
+    product_category = input("Enter the product category you want to scrape (e.g., 'women clothing', 'electronics', etc.): ")
+    
+    # Encode the user input for use in the URL
+    encoded_category = urllib.parse.quote(product_category)
+    
+    # Construct the base URL with the user's input
+    base_url = f'https://www.aliexpress.com/wholesale?SearchText={encoded_category}'
+    
+    num_pages = int(input("Enter the number of pages to scrape: "))
 
     all_products = scrape_multiple_pages(base_url, num_pages)
     print(f"Total products scraped: {len(all_products)}")
@@ -159,49 +149,18 @@ if __name__ == "__main__":
     relevant_products = classify_products_with_llama(all_products)
     print(f"Relevant products found: {len(relevant_products)}")
 
-    # Convert to DataFrame and save to CSV
+    # Convert to DataFrame
     df = pd.DataFrame(relevant_products)
-    df['stock'] = 0  # Initialize stock
-    df['substitute'] = ''  # Initialize substitute column
-    df['shopify_id'] = ''  # Initialize Shopify ID column
 
-    # Create products in Shopify and get their IDs
-    for index, row in df.iterrows():
-        try:
-            new_product = shopify.Product()
-            new_product.title = row['title']
-            new_product.body_html = row['description']
-            new_product.vendor = 'AliExpress'
-            new_product.product_type = row['category']
-            
-            variant = shopify.Variant()
-            variant.price = row['price']
-            variant.sku = f"ALI-{index}"
-            new_product.variants = [variant]
-            
-            new_product.save()
-            df.at[index, 'shopify_id'] = new_product.id
-            print(f"Created Shopify product: {new_product.title}")
-        except Exception as e:
-            print(f"Failed to create Shopify product for {row['title']}: {e}")
+    # Prepare Shopify-compatible CSV
+    shopify_df = prepare_shopify_csv(df)
 
-    csv_file = 'aliexpress_women_products.csv'
-    df.to_csv(csv_file, index=False)
-    print(f"Exported {len(df)} relevant products to {csv_file}")
+    # Save to CSV
+    csv_file = f'aliexpress_{product_category.replace(" ", "_")}_for_shopify.csv'
+    shopify_df.to_csv(csv_file, index=False)
+    print(f"Exported {len(shopify_df)} relevant products to {csv_file}")
 
-    # Schedule stock checks
-    schedule.every(1).hour.do(check_and_update_stock)
-
-    # Run the stock check in a separate thread
-    stock_thread = threading.Thread(target=run_stock_check)
-    stock_thread.start()
-
-    print("Stock checking started. Press Ctrl+C to stop.")
-
-    # Keep the main thread running
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Stopping stock checking...")
-        # You might want to add any cleanup code here
+    # Also save the original scraped data
+    original_csv_file = f'aliexpress_{product_category.replace(" ", "_")}_original.csv'
+    df.to_csv(original_csv_file, index=False)
+    print(f"Exported original data for {len(df)} products to {original_csv_file}")
