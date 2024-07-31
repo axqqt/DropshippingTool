@@ -6,6 +6,12 @@ import requests
 from bs4 import BeautifulSoup
 import json
 
+from langchain_ollama import OllamaLLM
+from langchain_core.prompts import ChatPromptTemplate
+
+# Initialize the LLM model
+model = OllamaLLM(model="llama3")
+
 # Assuming Llama is running as a local API server
 LLAMA_API_URL = "http://localhost:8080/generate"  # Adjust this URL as needed
 
@@ -13,13 +19,12 @@ def ai_analyze_prompt(prompt):
     """
     Use Llama to analyze the prompt and extract key terms.
     """
-    payload = {
-        "prompt": f"Extract key search terms from this prompt: {prompt}\nKey terms:",
-        "max_tokens": 50,
-        "temperature": 0.7
-    }
-    response = requests.post(LLAMA_API_URL, json=payload)
-    key_terms = response.json()['generated_text'].strip().split(', ')
+    payload = ChatPromptTemplate.from_template(
+        f"Extract key search terms from this prompt: {prompt}\nKey terms:"
+    )
+    response = model.invoke(payload)
+    key_terms = response.strip().split(", ")
+    print(f"The response is {key_terms}")
     return key_terms
 
 def search_aliexpress(key_terms, num_products):
