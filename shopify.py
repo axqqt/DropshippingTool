@@ -8,7 +8,7 @@ from openai import OpenAI
 import os
 
 # Set up OpenAI client
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.environ.get("thekey123lol"))
 
 def ai_analyze_prompt(prompt):
     """
