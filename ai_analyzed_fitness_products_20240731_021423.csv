@@ -1,3 +1,0 @@
-Handle,Title,Body (HTML),Vendor,Product Category,Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Variant SKU,Variant Price,Variant Inventory Qty,Image Src
-product-2044,AI-Analyzed Product 89,<p>This is an AI-analyzed product description.</p>,AliExpress,AI-Determined Category,AI-Determined Type,"ai-analyzed, aliexpress",TRUE,Size,Small,Color,Red,SKU-6012,79.68,95,https://example.com/image9.jpg
-product-4714,AI-Analyzed Product 3,<p>This is an AI-analyzed product description.</p>,AliExpress,AI-Determined Category,AI-Determined Type,"ai-analyzed, aliexpress",TRUE,Size,Medium,Color,Red,SKU-5138,21.16,58,https://example.com/image2.jpg
