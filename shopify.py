@@ -4,24 +4,22 @@ import time
 import random
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
-import os
+import json
 
-# Set up OpenAI client
-client = OpenAI(api_key=os.environ.get("thekey123lol"))
+# Assuming Llama is running as a local API server
+LLAMA_API_URL = "http://localhost:8080/generate"  # Adjust this URL as needed
 
 def ai_analyze_prompt(prompt):
     """
-    Use OpenAI to analyze the prompt and extract key terms.
+    Use Llama to analyze the prompt and extract key terms.
     """
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that extracts key search terms from product prompts."},
-            {"role": "user", "content": f"Extract key search terms from this prompt: {prompt}"}
-        ]
-    )
-    key_terms = response.choices[0].message.content.split(', ')
+    payload = {
+        "prompt": f"Extract key search terms from this prompt: {prompt}\nKey terms:",
+        "max_tokens": 50,
+        "temperature": 0.7
+    }
+    response = requests.post(LLAMA_API_URL, json=payload)
+    key_terms = response.json()['generated_text'].strip().split(', ')
     return key_terms
 
 def search_aliexpress(key_terms, num_products):
@@ -45,7 +43,7 @@ def search_aliexpress(key_terms, num_products):
 
 def ai_analyze_product(url):
     """
-    Use OpenAI to analyze a product URL and generate product details.
+    Use Llama to analyze a product URL and generate product details.
     """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -58,18 +56,31 @@ def ai_analyze_product(url):
     price = soup.find('span', class_='product-price-value').text.strip()
     description = soup.find('div', class_='product-description').text.strip()
     
-    # Use OpenAI to analyze and enhance the product details
-    ai_response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant that analyzes product information and generates enhanced details for e-commerce listings."},
-            {"role": "user", "content": f"Analyze this product and generate enhanced details for a Shopify store:\nTitle: {title}\nPrice: {price}\nDescription: {description}"}
-        ]
-    )
-    ai_analysis = ai_response.choices[0].message.content
+    # Use Llama to analyze and enhance the product details
+    prompt = f"""Analyze this product and generate enhanced details for a Shopify store:
+Title: {title}
+Price: {price}
+Description: {description}
+
+Provide the following details:
+- Enhanced Title:
+- Category:
+- Type:
+- Tags:
+- Size:
+- Color:
+- Enhanced Description:
+"""
+    
+    payload = {
+        "prompt": prompt,
+        "max_tokens": 200,
+        "temperature": 0.7
+    }
+    response = requests.post(LLAMA_API_URL, json=payload)
+    ai_analysis = response.json()['generated_text']
     
     # Parse AI analysis to extract structured data
-    # (This is a simplified example; you might want to implement more robust parsing)
     ai_lines = ai_analysis.split('\n')
     ai_data = {}
     for line in ai_lines:
@@ -79,8 +90,8 @@ def ai_analyze_product(url):
     
     return {
         "Handle": f"product-{random.randint(1000, 9999)}",
-        "Title": ai_data.get('Title', title),
-        "Body (HTML)": f"<p>{ai_data.get('Description', description)}</p>",
+        "Title": ai_data.get('Enhanced Title', title),
+        "Body (HTML)": f"<p>{ai_data.get('Enhanced Description', description)}</p>",
         "Vendor": "AliExpress",
         "Product Category": ai_data.get('Category', ''),
         "Type": ai_data.get('Type', ''),
